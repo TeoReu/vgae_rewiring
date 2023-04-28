@@ -11,12 +11,13 @@ def first_pos_eigenvalue(a):
     return pos_eigenvalues(a)[1]
 
 
-def pos_eigenvalues(a):
+def pos_eigenvalues(a, device):
     """
     Returns the positive eigenvalues of the laplacian of a graph
     :param a:
     :return:
     """
+    a.to(device)
     degrees = torch.sum(a, dim=1).unsqueeze(-1)
     I = torch.eye(a.size()[0])
     D = torch.pow(degrees, -0.5).squeeze()

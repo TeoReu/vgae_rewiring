@@ -64,4 +64,12 @@ class L1VGAE(VGAE):
     def lambda_loss(self, z):
         a = self.decoder.forward_all(z)
 
-        return - first_pos_eigenvalue(a)
+        degrees = torch.sum(a, dim=1).unsqueeze(-1)
+        I = torch.eye(a.size()[0])
+        D = torch.pow(degrees, -0.5).squeeze()
+        D = torch.diag(D)
+        lap_sym = I - torch.mm(torch.mm(D, a), D)
+
+        eigenvalues = torch.sort(torch.real(torch.linalg.eigvals(lap_sym)))
+
+        return eigenvalues[0][1]
