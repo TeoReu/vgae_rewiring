@@ -12,18 +12,20 @@ from utils.vgae import val, train
 
 
 def main(args):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     model_weights_path, model_outputs_path, model_pictures_path, file_path = create_paths_vgae_weights(args)
 
     train_set, test_set, val_set = split_dataset(args.transform)
 
     in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 32, 1e-2, 50
 
-    gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 1, False
+    gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 64, False
 
     model = L1VGAE(VariationalEncoder(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform))
 
+    model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
 
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_set, batch_size=batch_size)
@@ -31,8 +33,8 @@ def main(args):
     f = open(model_outputs_path, "w")
 
     for epoch in range(1, n_epochs + 1):
-        loss = train(model, train_loader, optimizer, scheduler, args)
-        auc, ap = val(model, test_loader, args)
+        loss = train(model, train_loader, optimizer, args, device)
+        auc, ap = val(model, test_loader, args, device)
         f.write(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, AUC: {auc:.4f}, AP: {ap:.4f}\n')
         print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, AUC: {auc:.4f}, AP: {ap:.4f}')
 

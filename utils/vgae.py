@@ -4,11 +4,12 @@ import torch
 from torch_geometric.utils import to_dense_adj, negative_sampling
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 
-def train(model, train_loader, optimizer, scheduler, args):
+def train(model, train_loader, optimizer, args, device):
     model.train()
     loss_all = 0
 
     for data in train_loader:
+        data.to(device)
         optimizer.zero_grad()
         z = model.encode(data)
 
@@ -22,17 +23,19 @@ def train(model, train_loader, optimizer, scheduler, args):
         loss.backward()
         loss_all += data.y.size(0) * float(loss)
         optimizer.step()
-        scheduler.step()
 
     return loss_all / len(train_loader.dataset)
 
 @torch.no_grad()
-def test(model, test_loader, gen_graphs):
+def test(model, test_loader, gen_graphs, device):
+
     model.eval()
     gen_adj = []
     adj = []
 
     for graph, data in enumerate(test_loader):
+        data.to(device)
+
         z = model.encode(data)
         gen_adj.append(model.decoder.forward_all(z))
         adj.append(to_dense_adj(data.edge_index))
@@ -43,11 +46,14 @@ def test(model, test_loader, gen_graphs):
 
 
 @torch.no_grad()
-def val(model, val_loader, args):
+def val(model, val_loader, args, device):
+
     model.eval()
     auc_all, ap_all = 0, 0
 
     for data in val_loader:
+        data.to(device)
+
         z = model.encode(data)
 
         if args.split_graph == "_full_negative":
