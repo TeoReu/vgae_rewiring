@@ -12,7 +12,6 @@ def train(model, train_loader, optimizer, args, device):
         data.to(device)
         optimizer.zero_grad()
         z = model.encode(data)
-        args.alpha.to(device)
 
         if args.split_graph == "_full_negative":
             loss = model.recon_loss(z, data.edge_index, negative_edges(data.edge_index)) + (
