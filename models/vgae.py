@@ -67,13 +67,14 @@ class L1VGAE(VGAE):
         a = self.decoder.forward_all(z)
 
         a.to(self.device)
-
+        print(self.device)
         degrees = torch.sum(a, dim=1).unsqueeze(-1)
         I = torch.eye(a.size()[0])
         I.to(self.device)
 
         D = torch.pow(degrees, -0.5).squeeze()
         D = torch.diag(D)
+        D.to(self.device)
         lap_sym = I - torch.mm(torch.mm(D, a), D)
 
         eigenvalues = torch.sort(torch.real(torch.linalg.eigvals(lap_sym)))
