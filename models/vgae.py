@@ -65,16 +65,18 @@ class L1VGAE(VGAE):
 
     def lambda_loss(self, z):
         a = self.decoder.forward_all(z)
+        print("Device:" + str(self.device))
 
-        a.to(self.device)
-        print(self.device)
         degrees = torch.sum(a, dim=1).unsqueeze(-1)
         I = torch.eye(a.size()[0])
-        I.to(self.device)
 
         D = torch.pow(degrees, -0.5).squeeze()
         D = torch.diag(D)
+
         D.to(self.device)
+        I.to(self.device)
+        a.to(self.device)
+
         lap_sym = I - torch.mm(torch.mm(D, a), D)
 
         eigenvalues = torch.sort(torch.real(torch.linalg.eigvals(lap_sym)))
