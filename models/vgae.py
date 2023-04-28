@@ -59,7 +59,7 @@ class VariationalEncoder(torch.nn.Module):
 
 class L1VGAE(VGAE):
     def __init__(self, encoder: Module, device, decoder: Optional[Module] = None):
-        super().__init__(encoder, device, decoder)
+        super().__init__(encoder, decoder)
 
         self.device = device
 
