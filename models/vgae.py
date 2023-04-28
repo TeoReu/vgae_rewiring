@@ -77,7 +77,7 @@ class L1VGAE(VGAE):
         I.to(self.device)
         a.to(self.device)
 
-        lap_sym = I - torch.mm(torch.mm(D, a), D)
+        lap_sym = I - torch.mm(torch.mm(D, a).to(self.device), D)
 
         eigenvalues = torch.sort(torch.real(torch.linalg.eigvals(lap_sym)))
 
