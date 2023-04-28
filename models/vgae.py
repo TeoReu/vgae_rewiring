@@ -58,14 +58,20 @@ class VariationalEncoder(torch.nn.Module):
 
 
 class L1VGAE(VGAE):
-    def __init__(self, encoder: Module, decoder: Optional[Module] = None):
-        super().__init__(encoder, decoder)
+    def __init__(self, encoder: Module, device, decoder: Optional[Module] = None):
+        super().__init__(encoder, device, decoder)
+
+        self.device = device
 
     def lambda_loss(self, z):
         a = self.decoder.forward_all(z)
 
+        a.to(self.device)
+
         degrees = torch.sum(a, dim=1).unsqueeze(-1)
         I = torch.eye(a.size()[0])
+        I.to(self.device)
+
         D = torch.pow(degrees, -0.5).squeeze()
         D = torch.diag(D)
         lap_sym = I - torch.mm(torch.mm(D, a), D)
