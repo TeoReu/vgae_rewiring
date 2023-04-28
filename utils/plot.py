@@ -48,5 +48,5 @@ def plot_paired_graphs(model, data, model_pictures_path, gen_graphs, threshold, 
         nx.draw(G2, ax=ax2, with_labels=True)
         ax2.set_title("Rewired Graph")
 
-        plt.savefig(model_pictures_path + '/' + str(graph) + '.png')
+        plt.savefig(model_pictures_path + '/' + str(graph) + '.png', dpi=30)
         # plt.show()

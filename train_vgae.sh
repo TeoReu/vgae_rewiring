@@ -11,8 +11,6 @@ do
           python zinc.py --model $model --split_graph $split_graph  --layers $layers --file_name "results_vgae" --alpha $alpha --transform $transform
         done
       done
+    done
   done
 done
-
-
-
