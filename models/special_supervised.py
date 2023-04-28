@@ -29,7 +29,12 @@ class VGAEGCN(nn.Module):
 
 
     def forward(self, data):
-        vgae
+        z = self.vgae.encode(data)
+
+        gen_adj = self.vgae.decoder.forward_all(z)
+
+        new_edge_index = to_
+
 
         x_1 = self.layers(x, data.edge_index)
 
