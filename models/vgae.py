@@ -76,4 +76,4 @@ class L1VGAE(VGAE):
 
         eigenvalues = torch.sort(torch.real(torch.linalg.eigvals(lap_sym)))
 
-        return eigenvalues[0][1]
+        return - eigenvalues[0][1]
