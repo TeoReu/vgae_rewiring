@@ -18,7 +18,7 @@ def main(args):
 
     train_set, test_set, val_set = split_dataset(args.transform)
 
-    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 64, 0.001, 25
+    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 20, 0.001, 1
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 64, False
 
@@ -31,16 +31,19 @@ def main(args):
     test_loader = DataLoader(test_set, batch_size=batch_size)
 
     f = open(model_outputs_path, "w")
-
+    best_acc = 0
     for epoch in range(1, n_epochs + 1):
         loss = train(model, train_loader, optimizer, args, device)
         auc, ap = val(model, test_loader, args, device)
+        if auc > best_acc:
+            best_acc = auc
+            best_model = model
         f.write(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, AUC: {auc:.4f}, AP: {ap:.4f}\n')
         print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, AUC: {auc:.4f}, AP: {ap:.4f}')
 
-    torch.save(model.state_dict(), model_weights_path)
+    torch.save(best_model.state_dict(), model_weights_path)
 
-    plot_paired_graphs(model, train_set, model_pictures_path, gen_graphs, threshold, add_self_loops)
+    plot_paired_graphs(model, train_set, model_pictures_path, gen_graphs, threshold, add_self_loops, device)
 
 
 if __name__ == "__main__":

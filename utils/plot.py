@@ -18,7 +18,7 @@ def create_nx_graph_from_indices(add_self_loops, indices):
     return G
 
 
-def plot_paired_graphs(model, data, model_pictures_path, gen_graphs, threshold, add_self_loops):
+def plot_paired_graphs(model, data, model_pictures_path, gen_graphs, threshold, add_self_loops, device):
     graphs = np.random.choice(len(data), gen_graphs, False)
 
     test_graph_list = []
@@ -26,7 +26,7 @@ def plot_paired_graphs(model, data, model_pictures_path, gen_graphs, threshold, 
         test_graph_list.append(data[g_id])
     test_loader = DataLoader(test_graph_list)
 
-    adj, gen_adj = test(model,test_loader, gen_graphs)
+    adj, gen_adj = test(model,test_loader, gen_graphs, device)
 
     for graph in range(gen_graphs):
         recon_adj_binary = gen_adj[graph] > threshold
