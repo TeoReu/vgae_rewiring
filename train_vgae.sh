@@ -8,7 +8,7 @@ do
       do
         for transform in True False
         do
-          python zinc_vgae.py --model $model --split_graph $split_graph  --layers $layers --file_name "results_vgae" --alpha $alpha --transform $transform
+          python zinc_vgae.py --model $model --split_graph $split_graph  --layers $layers --file_name "results" --alpha $alpha --transform $transform
         done
       done
     done
