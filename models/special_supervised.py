@@ -1,5 +1,5 @@
 from torch import nn
-from torch.nn import Embedding, Linear
+from torch.nn import Embedding, Linear, ReLU
 from torch_geometric.nn import GCN, VGAE
 from torch_geometric.utils import dense_to_sparse
 from torch_scatter import scatter_sum
@@ -30,10 +30,11 @@ class VGAEGCN(nn.Module):
         z = self.vgae.encode(data)
 
         gen_adj = self.vgae.decoder.forward_all(z)
+        gen_adj = ReLU()(gen_adj - 0.5)
 
-        new_edge_index, new_edge_attr = dense_to_sparse(gen_adj)
+        new_edge_index, new_edge_weight = dense_to_sparse(gen_adj)
 
-        x_1 = self.layers(x_1, new_edge_index)
+        x_1 = self.layers(x_1, new_edge_index, edge_weight=new_edge_weight)
 
         y_hat = scatter_sum(x_1, data.batch, dim=0)
         y_hat = y_hat.squeeze(-1)
