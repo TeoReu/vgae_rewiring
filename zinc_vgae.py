@@ -12,13 +12,18 @@ from utils.vgae import val, train
 
 
 def main(args):
+    if args.transform == 1:
+        args.transform = True
+    else:
+        args.transform = False
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model_weights_path, model_outputs_path, model_pictures_path, file_path = create_paths_vgae_weights(args)
 
     train_set, test_set, val_set = split_dataset(args.transform)
 
-    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 20, 0.001, 20
+    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 20, 0.001, 5
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 64, False
 
@@ -53,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('--file_name', type=str, default='new_vgae_cheeger')
     parser.add_argument('--split_graph', type=str, default='_')
     parser.add_argument('--alpha', type=float, default=0.5)
-    parser.add_argument('--transform', type=bool, default=True)
+    parser.add_argument('--transform', type=int, default=1)
 
     args = parser.parse_args()
     main(args)
