@@ -18,7 +18,7 @@ def main(args):
 
     train_set, test_set, val_set = split_dataset(args.transform)
 
-    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 20, 0.001, 25
+    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 20, 0.001, 20
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 64, False
 
