@@ -30,7 +30,7 @@ class VGAEGCN(nn.Module):
         z = self.vgae.encode(data)
 
         gen_adj = self.vgae.decoder.forward_all(z)
-        gen_adj = ReLU()(gen_adj - 0.5)
+        gen_adj = ReLU()(gen_adj - 0.65)
 
         new_edge_index, new_edge_weight = dense_to_sparse(gen_adj)
 
