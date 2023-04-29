@@ -22,11 +22,13 @@ class VGAEGCN(nn.Module):
 
         self.vgae = VGAE(VariationalEncoder(in_channels=1, out_channels=hidden_dim, layers=2, molecular=True, transform=False))
 
-        self.layers = GCN(in_channels=hidden_dim, hidden_channels=hidden_dim, num_layers=num_layers, out_channels=output_dim)
-
+        self.vgae_layers = GCN(in_channels=hidden_dim, hidden_channels=hidden_dim, num_layers=num_layers, out_channels=output_dim)
+        self.layers= GCN(in_channels=hidden_dim, hidden_channels=hidden_dim, num_layers=num_layers, out_channels=output_dim)
 
     def forward(self, data):
-        x_1 = self.embed_x(data.x.long()).squeeze(1)
+        x = self.embed_x(data.x.long()).squeeze(1)
+
+
         z = self.vgae.encode(data)
 
         gen_adj = self.vgae.decoder.forward_all(z)
@@ -34,8 +36,10 @@ class VGAEGCN(nn.Module):
 
         new_edge_index, new_edge_weight = dense_to_sparse(gen_adj)
 
-        x_1 = self.layers(x_1, new_edge_index, edge_weight=new_edge_weight)
+        x_0 = self.layers(x, data.edge_index)
+        x_1 = self.vgae_layers(x, new_edge_index, edge_weight=new_edge_weight)
 
-        y_hat = scatter_sum(x_1, data.batch, dim=0)
+        x = x_0 + x_1
+        y_hat = scatter_sum(x, data.batch, dim=0)
         y_hat = y_hat.squeeze(-1)
         return y_hat, data.x
