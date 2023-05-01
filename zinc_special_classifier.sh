@@ -6,7 +6,7 @@ do
     do
       for alpha in 0.1
       do
-          for threshold in 0.65
+          for threshold in 0.65 0.75 0.9 0.95
           do
             for transform in 0 1
             do

@@ -43,7 +43,7 @@ def main(args):
             alpha) +'/model.pt'))
 
 
-    model = VGAEGCN_init_vae(input_dim=data_train[0].num_features, output_dim=1, hidden_dim=32, vae=vae, num_layers=args.layers, molecular=True, trans=args.transform)
+    model = VGAEGCN_init_vae(input_dim=data_train[0].num_features, output_dim=1, hidden_dim=32, vae=vae, threshold=args.threshold, num_layers=args.layers, molecular=True, trans=args.transform)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default="simple")
     parser.add_argument('--vae_layers', type=int, default=2)
-    parser.add_argument('--threshold', type=float, default=0.5)
+    parser.add_argument('--threshold', type=float, default=0.65)
     parser.add_argument('--layers', type=int, default=4)
     parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--file_name', type=str, default="test/zinc_models")

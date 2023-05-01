@@ -46,13 +46,13 @@ class VGAEGCN(nn.Module):
 
 
 class VGAEGCN_init_vae(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, vae, num_layers=2,
+    def __init__(self, input_dim, output_dim, hidden_dim, vae, threshold =0.65, num_layers=2,
                  molecular=True, trans=False):
         super(VGAEGCN_init_vae, self).__init__()
         self.num_layers = num_layers  # please select num_layers>=2
         self.molecular = molecular
         self.trans = trans
-
+        self.threshold = threshold
         if self.molecular:
             self.embed_x = Embedding(28, hidden_dim)
         else:
@@ -70,7 +70,7 @@ class VGAEGCN_init_vae(nn.Module):
         z = self.vgae.encode(data)
 
         gen_adj = self.vgae.decoder.forward_all(z)
-        gen_adj = ReLU()(gen_adj - 0.65)
+        gen_adj = ReLU()(gen_adj - self.threshold)
 
         new_edge_index, new_edge_weight = dense_to_sparse(gen_adj)
 
