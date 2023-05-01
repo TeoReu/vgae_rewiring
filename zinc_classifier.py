@@ -85,7 +85,7 @@ def train(model, train_loader, optimizer):
     for data in train_loader:
         optimizer.zero_grad()
         out, _ = model(data)
-        loss = F.mse_loss(out, data.y)
+        loss = F.l1_loss(out, data.y)
         loss.backward()
         optimizer.step()
 
