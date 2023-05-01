@@ -4,10 +4,10 @@ from torch_geometric.nn import GCN, GCNConv
 from torch_scatter import scatter_sum
 
 
-class GCN(nn.Module):
+class TGCN(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim, num_layers=2,
                  molecular=True, trans=True, vae=True):
-        super(GCN, self).__init__()
+        super(TGCN, self).__init__()
         self.num_layers = num_layers  # please select num_layers>=2
         self.molecular = molecular
         self.trans = trans
@@ -45,3 +45,4 @@ class GCN(nn.Module):
         y_hat = scatter_sum(x_1, data.batch, dim=0)
         y_hat = y_hat.squeeze(-1)
         return y_hat, x
+
