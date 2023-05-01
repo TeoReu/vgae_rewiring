@@ -110,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument('--layers', type=int, default=4)
     parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--file_name', type=str, default="test/zinc_models")
-    parser.add_argument('--transform', type=str, default=True)
+    parser.add_argument('--transform', type=int, default=1)
     parser.add_argument('--nr', type=int, default=1)
     args = parser.parse_args()
     main(args)
