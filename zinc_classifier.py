@@ -31,7 +31,7 @@ def main(args):
 
     data_train, data_test, data_val, = split_dataset(args.transform)
 
-    in_channels, out_channels, lr, n_epochs = data_train[0].num_features, 20, 0.001, 100
+    in_channels, out_channels, lr, n_epochs = data_train[0].num_features, 20, 0.001, 300
 
     if args.model == 'vr':
         vae_layers, alpha, threshold = args.vae_layers, args.alpha, args.threshold
