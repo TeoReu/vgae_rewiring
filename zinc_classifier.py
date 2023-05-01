@@ -39,7 +39,7 @@ def main(args):
         vae.load_state_dict(torch.load(
             'results/model_GCN/graph_split_/layers_' + str(
                 vae_layers) + '/transform_'+str(args.transform)+'/alpha_' + str(
-                alpha) + '/nr_' + str(args.nr) +'/model.pt'))
+                alpha) +'/model.pt'))
 
         vae.eval()
 

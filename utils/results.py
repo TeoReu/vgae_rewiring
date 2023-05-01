@@ -16,10 +16,10 @@ def create_paths_vgae_weights(args):
 
 def create_paths_for_classifier(args):
     if args.model == 'simple':
-        file_path = args.file_name + "/model_" + args.model + "/layers_" + str(args.layers)
+        file_path = args.file_name + "/model_" + args.model + "/layers_" + str(args.layers)  + '/nr_' + str(args.nr)
     else:
         file_path = args.file_name + "/model_" + args.model + "/layers_" + str(
-            args.layers) + "/vae_layers_" + str(args.vae_layers) + "/threshold_" + str(args.threshold) + "/transform_eig/alpha_" + str(args.alpha)
+            args.layers) + "/vae_layers_" + str(args.vae_layers) + "/threshold_" + str(args.threshold) + '/transform_ ' + str(args.transform) + '/alpha_' + str(args.alpha) + '/nr_' + str(args.nr)
     model_outputs_path = file_path + "/results.txt"
 
     if not os.path.exists(file_path):
