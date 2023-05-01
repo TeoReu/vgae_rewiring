@@ -60,13 +60,14 @@ def main(args):
     for epoch in range(1, n_epochs):
         train(model, train_loader, optimizer)
         acc = v_test(model, test_loader)
-        if acc[1] > best_acc:
-            best_acc = acc[1]
-            torch.save(vae.state_dict(), file_path+'/model.pt')
+
 
         print(f'Epoch: {epoch:03d}, MSE: {acc[0]:.4f}, L1: {acc[1]:.4f}')
         f.write(f'Epoch: {epoch:03d}, MSE: {acc[0]:.4f}, L1: {acc[1]:.4f}\n')
     f.close()
+
+    torch.save(vae.state_dict(), file_path+'/model.pt')
+
 
 def transform_zinc_dataset(vae, dataset, threshold):
     dataset_copy = []
