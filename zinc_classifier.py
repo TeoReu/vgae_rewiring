@@ -58,7 +58,7 @@ def main(args):
 
     # Train the model for 100 epochs
 
-    f = open(model_outputs_path, "a")
+    f = open(model_outputs_path, "w")
 
     for epoch in range(1, n_epochs):
         train(model, train_loader, optimizer)
