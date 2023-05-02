@@ -11,9 +11,9 @@ done
 
 for model in "vr"
 do
-  for layers in 4
+  for layers in 1 2 4
   do
-    for vae_layers in 1 4
+    for vae_layers in 1
     do
       for alpha in 0.0 0.1 1.0
       do
