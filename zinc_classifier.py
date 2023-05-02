@@ -4,6 +4,7 @@ import os
 import numpy as np
 import torch
 import torch.nn.functional as F
+from torch.nn import ReLU
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import dense_to_sparse
 
@@ -77,7 +78,20 @@ def transform_zinc_dataset(vae, dataset, threshold):
         graph.vr_edge_index = sparse
         dataset_copy.append(graph)
 
+def transform_zinc_dataset_with_weights(vae, dataset, threshold):
+    dataset_copy = []
+    for graph in dataset:
+        #print(graph)
+        z = vae.encode(graph)
+        gen_adj = vae.decoder.forward_all(z)
 
+        gen_adj = ReLU()(gen_adj - threshold)
+
+        new_edge_index, new_edge_weight = dense_to_sparse(gen_adj)
+
+        graph.vr_edge_index = new_edge_index
+        graph.vr_edge_weight = new_edge_weight
+        dataset_copy.append(graph)
     return dataset_copy
 # Define the training loop
 def train(model, train_loader, optimizer):
