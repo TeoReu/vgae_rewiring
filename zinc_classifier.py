@@ -78,6 +78,8 @@ def transform_zinc_dataset(vae, dataset, threshold):
         graph.vr_edge_index = sparse
         dataset_copy.append(graph)
 
+    return dataset_copy
+
 def transform_zinc_dataset_with_weights(vae, dataset, threshold):
     dataset_copy = []
     for graph in dataset:
@@ -118,7 +120,7 @@ def v_test(model, loader):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="simple")
+    parser.add_argument('--model', type=str, default="vr")
     parser.add_argument('--vae_layers', type=int, default=2)
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--layers', type=int, default=4)
