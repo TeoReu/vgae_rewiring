@@ -1,6 +1,6 @@
 for model in "vr"
 do
-  for layers in 1 2 4
+  for layers in 4
   do
     for vae_layers in 1
     do

@@ -1,17 +1,6 @@
-for model in "simple"
-do
-  for layers in 1 2 4
-  do
-    for nr in 123 234
-    do
-      python zinc_classifier.py --model $model --layers $layers --file_name "results_regression_zinc" --nr $nr
-    done
-  done
-done
-
 for model in "vr"
 do
-  for layers in 1 2 4
+  for layers in 4
   do
     for vae_layers in 1
     do
