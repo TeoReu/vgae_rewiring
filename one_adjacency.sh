@@ -12,7 +12,7 @@ do
             do
               for nr in 234 123
               do
-                python one_adjacency_zinc.py --model $model --vae_layers $vae_layers --threshold $threshold --layers $layers --alpha $alpha --file_name "one_adj" --transform $transform --nr $nr
+                python one_adjacency_zinc.py --model $model --vae_layers $vae_layers --threshold $threshold --layers $layers --alpha $alpha --file_name "one_adj_with_edge_attr" --transform $transform --nr $nr
               done
             done
           done
