@@ -48,8 +48,8 @@ def main(args):
     data_train = transform_zinc_dataset_with_weights(vae, data_train, args.threshold)
     data_test = transform_zinc_dataset_with_weights(vae, data_test, args.threshold)
 
-    data_train = get_new_edge_index(data_train)
-    data_test = get_new_edge_index(data_test)
+    #data_train = get_new_edge_index(data_train)
+    #data_test = get_new_edge_index(data_test)
 
     model = TGCNwithAttributes(data_train[0].num_features, 1, 32, args.layers, molecular=True, trans=args.transform)
 
