@@ -4,6 +4,7 @@ from torch.optim.lr_scheduler import StepLR
 from torch_geometric.loader import DataLoader
 import numpy as np
 from torch_geometric.nn import VGAE
+from torch_geometric.utils import degree
 
 from models.vgae import VariationalEncoder, L1VGAE, VariationalEncoderwithModel
 from utils.dataset import split_dataset
@@ -19,11 +20,24 @@ def main(args):
 
     train_set, test_set, val_set = split_dataset(args.transform)
 
-    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 20, 0.001, 1
+    deg = None
+    if args.model == "PNA":
+        max_degree = -1
+        for data in train_set:
+            d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+            max_degree = max(max_degree, int(d.max()))
+
+        # Compute the in-degree histogram tensor
+        deg = torch.zeros(max_degree + 1, dtype=torch.long)
+        for data in train_set:
+            d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+            deg += torch.bincount(d, minlength=deg.numel())
+
+    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 20, 0.001, 20
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 20, False
 
-    model = VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model))
+    model = VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg))
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -49,8 +63,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='GCN')
-    parser.add_argument('--layers', type=int, default = 2)
+    parser.add_argument('--model', type=str, default='PNA')
+    parser.add_argument('--layers', type=int, default = 1)
     parser.add_argument('--file_name', type=str, default='new_vgae_cheeger')
     parser.add_argument('--transform', type=str, default="laplacian")
     parser.add_argument('--split_graph', type=str, default="_")

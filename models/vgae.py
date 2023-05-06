@@ -1,9 +1,10 @@
 import torch
-from torch.nn import Embedding, Linear
+from torch.nn import Embedding, Linear, ModuleList, Sequential, ReLU
 from torch.nn import Module
 from typing import Optional
+import torch.nn.functional as F
 
-from torch_geometric.nn import GCNConv, GCN, VGAE, GIN, GINConv, PNA, PNAConv
+from torch_geometric.nn import GCNConv, GCN, VGAE, GIN, GINConv, PNA, PNAConv, BatchNorm
 from utils.spectral import first_pos_eigenvalue
 
 class VariationalEncoder(torch.nn.Module):
@@ -59,7 +60,7 @@ class VariationalEncoder(torch.nn.Module):
 
 
 class VariationalEncoderwithModel(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, layers, molecular=True, transform=True, model="GCN"):
+    def __init__(self, in_channels, out_channels, layers, molecular=True, transform=True, model="GCN", deg=3):
         super().__init__()
 
         self.molecular = molecular
@@ -73,15 +74,13 @@ class VariationalEncoderwithModel(torch.nn.Module):
         elif self.model == "GCN" and self.layers > 1:
             self.conv = GCN(in_channels=2 * out_channels, hidden_channels=2 * out_channels, num_layers=self.layers,
                              out_channels=out_channels)
-        elif self.model == "PNA" and self.layers > 1:
-            self.conv = PNA(in_channels=2 * out_channels, hidden_channels=2 * out_channels, num_layers=self.layers,
-                             out_channels=out_channels)
+        elif self.model == "PNA":
+            self.conv = PNANet(layers=self.layers, out_channels=out_channels, deg=deg)
         elif self.model == "GIN" and self.layers == 1:
             self.conv = GINConv(in_channels=2 * out_channels, out_channels=out_channels)
-        elif self.model == "GIN" and self.layers == 1:
+        elif self.model == "GCN" and self.layers == 1:
             self.conv = GCNConv(in_channels=2 * out_channels, out_channels=out_channels)
-        elif self.model == "PNA" and self.layers == 1:
-            self.conv = PNAConv(in_channels=2 * out_channels, out_channels=out_channels)
+
 
         if self.molecular:
             self.embed_x = Embedding(28, 2 * out_channels)
@@ -110,7 +109,10 @@ class VariationalEncoderwithModel(torch.nn.Module):
         else:
             pass
 
-        x = self.conv(x, graph.edge_index).relu()
+        if self.model == "PNA":
+            x = self.conv(x, graph.edge_index, graph.edge_attr).relu()
+        else:
+            x = self.conv(x, graph.edge_index).relu()
         return self.conv_mu(x, graph.edge_index), self.conv_logstd(x, graph.edge_index)
 
 class L1VGAE(VGAE):
@@ -133,3 +135,33 @@ class L1VGAE(VGAE):
         eigenvalues = torch.sort(torch.real(torch.linalg.eigvals(lap_sym)))
 
         return - eigenvalues[0][1]
+
+
+class PNANet(torch.nn.Module):
+    def __init__(self, layers, out_channels, deg):
+        super().__init__()
+
+        self.edge_emb = Embedding(4, 50)
+
+        aggregators = ['mean', 'min', 'max', 'std']
+        scalers = ['identity', 'amplification', 'attenuation']
+
+        self.convs = ModuleList()
+        self.batch_norms = ModuleList()
+        for _ in range(layers):
+            conv = PNAConv(in_channels=2 * out_channels, out_channels=2 * out_channels,
+                           aggregators=aggregators, scalers=scalers, deg=deg,
+                           edge_dim=50, towers=5, pre_layers=1, post_layers=1,
+                           divide_input=False)
+            self.convs.append(conv)
+            self.batch_norms.append(BatchNorm(2 * out_channels))
+
+        self.mlp = Sequential(Linear(2 * out_channels, 2 * out_channels), ReLU(), Linear(2 * out_channels,  out_channels))
+
+    def forward(self, x, edge_index, edge_attr):
+        edge_attr = self.edge_emb(edge_attr)
+
+        for conv, batch_norm in zip(self.convs, self.batch_norms):
+            x = F.relu(batch_norm(conv(x, edge_index, edge_attr)))
+
+        return self.mlp(x)
