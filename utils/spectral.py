@@ -1,5 +1,5 @@
 import torch
-from torch_geometric.transforms import AddLaplacianEigenvectorPE
+from torch_geometric.transforms import AddLaplacianEigenvectorPE, AddRandomWalkPE
 
 
 def first_pos_eigenvalue(a):
@@ -30,6 +30,14 @@ def pos_eigenvalues(a, device):
 
 def add_laplacian_info_to_data(dataset):
     transform = AddLaplacianEigenvectorPE(5)
+    data = []
+    for graph in dataset:
+        graph = transform(graph)
+        data.append(graph)
+    return data
+
+def add_random_walk_info_to_data(dataset):
+    transform = AddRandomWalkPE(5)
     data = []
     for graph in dataset:
         graph = transform(graph)

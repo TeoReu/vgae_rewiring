@@ -14,6 +14,20 @@ def create_paths_vgae_weights(args):
 
     return model_weights_path, model_outputs_path, model_pictures_path, file_path
 
+def create_paths_vgae_experessivity_experiment(args):
+    file_path = args.file_name + "/model_" + args.model + "/layers_" + str(
+        args.layers) + "/transform_" + str(args.transform)
+
+    model_weights_path = file_path + "/model.pt"
+    model_outputs_path = file_path + "/results.txt"
+    model_pictures_path = file_path + "/graphs"
+
+    if not os.path.exists(model_pictures_path):
+        os.makedirs(model_pictures_path)
+
+    return model_weights_path, model_outputs_path, model_pictures_path, file_path
+
+
 def create_paths_for_classifier(args):
     if args.model == 'simple':
         file_path = args.file_name + "/model_" + args.model + "/layers_" + str(args.layers)  + '/nr_' + str(args.nr) + '/transform_' + str(args.transform)

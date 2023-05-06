@@ -13,12 +13,27 @@ def train(model, train_loader, optimizer, args, device):
         optimizer.zero_grad()
         z = model.encode(data)
 
-        if args.split_graph == "_full_negative":
-            loss = model.recon_loss(z, data.edge_index, negative_edges(data.edge_index)) + (
-                        1 / data.num_nodes) * model.kl_loss() + args.alpha * model.lambda_loss(z)
-        else:
-            loss = model.recon_loss(z, data.edge_index, None) + (
-                        1 / data.num_nodes) * model.kl_loss() + args.alpha * model.lambda_loss(z)
+        loss = model.recon_loss(z, data.edge_index, None) + (
+                    1 / data.num_nodes) * model.kl_loss() + args.alpha * model.lambda_loss(z)
+
+        loss.backward()
+        loss_all += data.y.size(0) * float(loss)
+        optimizer.step()
+
+    return loss_all / len(train_loader.dataset)
+
+
+def train_simple_vgae(model, train_loader, optimizer, args, device):
+    model.train()
+    loss_all = 0
+
+    for data in train_loader:
+        data.to(device)
+        optimizer.zero_grad()
+        z = model.encode(data)
+
+        loss = model.recon_loss(z, data.edge_index, None) + (
+                    1 / data.num_nodes) * model.kl_loss()
 
         loss.backward()
         loss_all += data.y.size(0) * float(loss)
@@ -64,6 +79,8 @@ def val(model, val_loader, args, device):
         auc_all += data.y.size(0) * float(auc)
         ap_all += data.y.size(0) * float(ap)
     return auc_all / len(val_loader.dataset), ap_all / len(val_loader.dataset)
+
+
 
 
 def negative_edges(edge_index: torch.Tensor,
