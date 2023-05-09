@@ -12,7 +12,7 @@ from torch_geometric.data import Data, download_url
 from torch_geometric.data import InMemoryDataset
 from tqdm import tqdm
 class PeptidesFunctionalDataset(InMemoryDataset):
-    def __init__(self, root='/Users/teodorareu/PycharmProjects/variational_rewiring/datasets', smiles2graph=smiles2graph,
+    def __init__(self, root='datasets', smiles2graph=smiles2graph,
                  transform=None, pre_transform=None):
         """
         PyG dataset of 15,535 peptides represented as their molecular graph
@@ -46,8 +46,6 @@ class PeptidesFunctionalDataset(InMemoryDataset):
         release_tag = osp.join(self.folder, self.version)
         if osp.isdir(self.folder) and (not osp.exists(release_tag)):
             print(f"{self.__class__.__name__} has been updated.")
-            if input("Will you update the dataset now? (y/N)\n").lower() == 'y':
-                shutil.rmtree(self.folder)
 
         super().__init__(self.folder, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
