@@ -37,7 +37,7 @@ def main(args):
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 20, False
 
-    model = VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg))
+    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg))
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -48,7 +48,7 @@ def main(args):
     f = open(model_outputs_path, "w")
     best_acc = 0
     for epoch in range(1, n_epochs + 1):
-        loss = train_simple_vgae(model, train_loader, optimizer, args, device)
+        loss = train(model, train_loader, optimizer, args, device)
         auc, ap = val(model, test_loader, args, device)
         if auc > best_acc:
             best_acc = auc
