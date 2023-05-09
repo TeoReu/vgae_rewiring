@@ -7,7 +7,7 @@ from torch_geometric.nn import VGAE
 from torch_geometric.utils import degree
 
 from models.vgae import VariationalEncoder, L1VGAE, VariationalEncoderwithModel
-from utils.dataset import split_dataset
+from utils.dataset import split_dataset, split_dataset_peptides
 from utils.plot import plot_paired_graphs, plot_paired_graph_weighted_edges
 from utils.results import create_paths_vgae_weights, create_paths_vgae_experessivity_experiment
 from utils.vgae import val, train, train_simple_vgae
@@ -18,7 +18,10 @@ def main(args):
 
     model_weights_path, model_outputs_path, model_pictures_path, file_path = create_paths_vgae_experessivity_experiment(args)
 
-    train_set, test_set, val_set = split_dataset(args.transform)
+    if args.dataset == "ZINC":
+        train_set, test_set, val_set = split_dataset(args.transform)
+    else:
+        train_set, test_set, val_set = split_dataset_peptides(args.transform)
 
     deg = None
     if args.model == "PNA":
@@ -63,10 +66,11 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str, default='zinc')
     parser.add_argument('--model', type=str, default='PNA')
     parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--layers', type=int, default = 1)
-    parser.add_argument('--file_name', type=str, default='new_vgae_cheeger')
+    parser.add_argument('--file_name', type=str, default='new_vgae_peptides')
     parser.add_argument('--transform', type=str, default="laplacian")
     parser.add_argument('--split_graph', type=str, default="_")
 
