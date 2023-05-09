@@ -64,6 +64,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='PNA')
+    parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--layers', type=int, default = 1)
     parser.add_argument('--file_name', type=str, default='new_vgae_cheeger')
     parser.add_argument('--transform', type=str, default="laplacian")
