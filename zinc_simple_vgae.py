@@ -40,7 +40,7 @@ def main(args):
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 10, False
 
-    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg), device)
+    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg, edge_dim=train_set[0].edge_attr.shape[1]), device)
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--layers', type=int, default = 1)
     parser.add_argument('--file_name', type=str, default='new_vgae_peptides')
-    parser.add_argument('--transform', type=str, default="laplacian")
+    parser.add_argument('--transform', type=str, default="no")
     parser.add_argument('--split_graph', type=str, default="_")
 
     args = parser.parse_args()

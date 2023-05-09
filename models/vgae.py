@@ -60,7 +60,7 @@ class VariationalEncoder(torch.nn.Module):
 
 
 class VariationalEncoderwithModel(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, layers, molecular=True, transform=True, model="GCN", deg=3):
+    def __init__(self, in_channels, out_channels, layers, molecular=True, transform=True, model="GCN", deg=3, edge_dim=1):
         super().__init__()
 
         self.molecular = molecular
@@ -75,7 +75,7 @@ class VariationalEncoderwithModel(torch.nn.Module):
             self.conv = GCN(in_channels=2 * out_channels, hidden_channels=2 * out_channels, num_layers=self.layers,
                              out_channels=out_channels)
         elif self.model == "PNA":
-            self.conv = PNANet(layers=self.layers, out_channels=out_channels, deg=deg)
+            self.conv = PNANet(layers=self.layers, out_channels=out_channels, deg=deg, edge_dim=edge_dim)
         elif self.model == "GIN" and self.layers == 1:
             self.conv = GINConv(in_channels=2 * out_channels, out_channels=out_channels)
         elif self.model == "GCN" and self.layers == 1:
@@ -138,11 +138,13 @@ class L1VGAE(VGAE):
 
 
 class PNANet(torch.nn.Module):
-    def __init__(self, layers, out_channels, deg):
+    def __init__(self, layers, out_channels, deg, edge_dim=1):
         super().__init__()
 
-        self.edge_emb = Embedding(4, 50)
-
+        if edge_dim == 1:
+            self.edge_emb = Embedding(4, 50)
+        else:
+            self.edge_emb = Linear(edge_dim, 50)
         aggregators = ['mean', 'min', 'max', 'std']
         scalers = ['identity', 'amplification', 'attenuation']
 
@@ -159,7 +161,7 @@ class PNANet(torch.nn.Module):
         self.mlp = Sequential(Linear(2 * out_channels, 2 * out_channels), ReLU(), Linear(2 * out_channels,  out_channels))
 
     def forward(self, x, edge_index, edge_attr):
-        edge_attr = self.edge_emb(edge_attr)
+        edge_attr = self.edge_emb(edge_attr.float())
 
         for conv, batch_norm in zip(self.convs, self.batch_norms):
             x = F.relu(batch_norm(conv(x, edge_index, edge_attr)))
