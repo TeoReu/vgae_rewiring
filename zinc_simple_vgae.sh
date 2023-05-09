@@ -1,6 +1,6 @@
 for model in "PNA"
 do
-  for transform in "laplacian"
+  for transform in "no"
   do
     for layers in 6
     do
