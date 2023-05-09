@@ -66,7 +66,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='zinc')
+    parser.add_argument('--dataset', type=str, default='peptides')
     parser.add_argument('--model', type=str, default='PNA')
     parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--layers', type=int, default = 1)
