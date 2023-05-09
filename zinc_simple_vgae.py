@@ -36,9 +36,9 @@ def main(args):
             d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
             deg += torch.bincount(d, minlength=deg.numel())
 
-    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 20, 0.001, 20
+    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 200, 0.001, 20
 
-    gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 20, False
+    gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 10, False
 
     model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg), device)
 
