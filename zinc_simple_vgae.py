@@ -37,7 +37,7 @@ def main(args):
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 20, False
 
-    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg))
+    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg), device)
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
