@@ -40,7 +40,7 @@ def main(args):
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 2, False
 
-    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=True, transform=args.transform, model=args.model, deg=deg, edge_dim=train_set[0].edge_attr.shape[1]), device)
+    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=False, transform=args.transform, model=args.model, deg=deg, edge_dim=train_set[0].edge_attr.shape[1]), device)
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -51,6 +51,7 @@ def main(args):
     f = open(model_outputs_path, "w")
     best_acc = 0
     for epoch in range(1, n_epochs + 1):
+        torch.cuda.empty_cache()
         loss = train(model, train_loader, optimizer, args, device)
         auc, ap = val(model, test_loader, args, device)
         if auc > best_acc:
@@ -67,9 +68,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='peptides')
-    parser.add_argument('--model', type=str, default='PNA')
+    parser.add_argument('--model', type=str, default='GCN')
     parser.add_argument('--alpha', type=float, default=0.5)
-    parser.add_argument('--layers', type=int, default = 1)
+    parser.add_argument('--layers', type=int, default = 3)
     parser.add_argument('--file_name', type=str, default='new_vgae_peptides')
     parser.add_argument('--transform', type=str, default="no")
     parser.add_argument('--split_graph', type=str, default="_")
