@@ -36,7 +36,7 @@ def train_simple_vgae(model, train_loader, optimizer, args, device):
                     1 / data.num_nodes) * model.kl_loss()
 
         loss.backward()
-        loss_all += data.y.size(0) * float(loss)
+        loss_all += data.y.size(0) * float(loss.item())
         optimizer.step()
 
     return loss_all / len(train_loader.dataset)
