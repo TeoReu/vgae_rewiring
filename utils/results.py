@@ -16,7 +16,7 @@ def create_paths_vgae_weights(args):
 
 def create_paths_vgae_experessivity_experiment(args):
     file_path = args.file_name + "/model_" + args.model + "/layers_" + str(
-        args.layers) + "/transform_" + str(args.transform)
+        args.layers) + "/transform_" + str(args.transform) + "/alpha_" + str(args.alpha)
 
     model_weights_path = file_path + "/model.pt"
     model_outputs_path = file_path + "/results.txt"
