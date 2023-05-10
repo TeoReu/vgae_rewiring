@@ -98,7 +98,7 @@ class VariationalEncoderwithModel(torch.nn.Module):
         if self.molecular:
             x = self.embed_x(graph.x.long()).squeeze(1)
         else:
-            x = self.embed_x(graph.x)
+            x = self.embed_x(graph.x.float())
 
         if self.transform == "laplacian":
             x_pe = self.trans_linear(graph.laplacian_eigenvector_pe)
