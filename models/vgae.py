@@ -161,7 +161,7 @@ class PNANet(torch.nn.Module):
         self.mlp = Sequential(Linear(2 * out_channels, 2 * out_channels), ReLU(), Linear(2 * out_channels,  out_channels))
 
     def forward(self, x, edge_index, edge_attr):
-        edge_attr = self.edge_emb(edge_attr.float())
+        edge_attr = self.edge_emb(edge_attr.long())
 
         for conv, batch_norm in zip(self.convs, self.batch_norms):
             x = F.relu(batch_norm(conv(x, edge_index, edge_attr)))

@@ -2,7 +2,7 @@ import os
 
 
 def create_paths_vgae_weights(args):
-    file_path = args.file_name + "/model_" + args.model + "/graph_split" + str(args.split_graph) + "/layers_" + str(
+    file_path = args.file_name + "/dataset_"+ args.dataset +"/model_" + args.model + "/graph_split" + str(args.split_graph) + "/layers_" + str(
         args.layers) + "/transform_" + str(args.transform) + "/alpha_" + str(args.alpha)
 
     model_weights_path = file_path + "/model.pt"

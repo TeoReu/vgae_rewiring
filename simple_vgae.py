@@ -20,8 +20,10 @@ def main(args):
 
     if args.dataset == "ZINC":
         train_set, test_set, val_set = split_dataset(args.transform)
+        edge_attr_dim = 1
     else:
         train_set, test_set, val_set = split_dataset_peptides(args.transform)
+        edge_attr_dim = train_set[0].edge_attr.shape[1]
 
     deg = None
     if args.model == "PNA":
@@ -40,7 +42,7 @@ def main(args):
 
     gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 5, False
 
-    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=False, transform=args.transform, model=args.model, deg=deg, edge_dim=train_set[0].edge_attr.shape[1]), device)
+    model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=False, transform=args.transform, model=args.model, deg=deg, edge_dim=edge_attr_dim), device)
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
