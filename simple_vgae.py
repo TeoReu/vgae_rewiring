@@ -40,7 +40,7 @@ def main(args):
 
     in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 200, 0.001, 20
 
-    gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 5, False
+    gen_graphs, threshold, batch_size, add_self_loops = 3, 0.65, 20, False
 
     model = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=False, transform=args.transform, model=args.model, deg=deg, edge_dim=edge_attr_dim), device)
 
