@@ -8,7 +8,9 @@ def first_pos_eigenvalue(a):
     :param a:
     :return:
     """
-    return pos_eigenvalues(a)[1]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    return pos_eigenvalues(a, device)[1]
 
 
 def pos_eigenvalues(a, device):

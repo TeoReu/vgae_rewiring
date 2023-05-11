@@ -55,11 +55,11 @@ def plot_paired_graph_weighted_edges(model, data, path, threshold, device):
     G1 = nx.Graph()
     G2 = nx.Graph()
 
-    data_test = data[0:5]
+    data_test = data[0:2]
     test_loader = DataLoader(data_test)
 
     adj, gen_adj = test(model,test_loader, 5, device)
-    for graph in range(5):
+    for graph in range(2):
         A1 = adj[graph].cpu().detach().squeeze().numpy()
         A2 = gen_adj[graph].cpu().detach().squeeze().numpy()
 
@@ -87,5 +87,5 @@ def plot_paired_graph_weighted_edges(model, data, path, threshold, device):
         nx.draw(G2, width=edge_widths2, ax=ax2, with_labels=True)
         ax2.set_title("Rewired Graph")
 
-        plt.savefig(path + '/' + str(graph) + '.png', dpi=100)
+        plt.savefig(path + '/' + str(graph) + '.png', dpi=50)
 
