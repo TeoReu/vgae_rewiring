@@ -61,9 +61,9 @@ def plot_lambda_distribution(dataset, model, layers):
 
         color = np.random.rand(3,)
 
-        e1_recon_adj = lambda_one_list_adj(gen_adj.squeeze()
+        e1_recon_adj = lambda_one_list_adj(gen_adj.squeeze())
 
-        plt.hist(np.array(e1_recon_adj), alpha=0.5, label='zinc/model_GCN/layers_4/transform_no'+ alpha +'/model.pt', color=color)
+        plt.hist(np.array(e1_recon_adj), alpha=0.5, label=alpha, color=color)
 
     plt.legend(loc='upper right')
     plt.show()
