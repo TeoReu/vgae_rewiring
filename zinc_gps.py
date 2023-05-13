@@ -82,15 +82,19 @@ def test(loader):
         total_error += (out.squeeze() - data.y).abs().sum().item()
     return total_error / len(loader.dataset)
 
-val_mae_max = None
+val_mae_min = None
 best_model = None
 for epoch in range(1, 101):
     loss = train(epoch)
     val_mae = test(val_loader)
 
-    if val_mae == None or val_mae > val_mae_max:
+    if val_mae == None:
         val_mae_max = val_mae
         best_model = model
+    elif  val_mae < val_mae_min:
+        val_mae_min = val_mae
+        best_model = model
+
     test_mae = test(test_loader)
     print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
           f'Test: {test_mae:.4f}')
