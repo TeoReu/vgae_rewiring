@@ -168,4 +168,3 @@ def plot_lambda_mean_over_thresholds(dataset, model, set, weighted):
     plt.title("Mean of lambda 1 "+ dataset)
     plt.savefig(dataset + "_" + model + "_" + set + "_set_lambda_1_mean_over_thresholds.png", dpi=300)
     plt.show()
-s

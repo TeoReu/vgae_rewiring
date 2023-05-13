@@ -9,9 +9,10 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.utils import dense_to_sparse
 
 from models.supervized import GCN, TGCN
-from models.vgae import VariationalEncoder, L1VGAE
-from utils.dataset import split_dataset
+from models.vgae import VariationalEncoder, L1VGAE, VariationalEncoderwithModel
+from utils.dataset import split_dataset, split_dataset_peptides
 from utils.results import create_paths_for_classifier
+from torch_geometric.utils import degree
 
 
 
@@ -22,33 +23,44 @@ def main(args):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-    if args.transform == 1:
-        args.transform = True
+    if args.dataset == "ZINC":
+        train_set, test_set, val_set = split_dataset(args.transform)
+        edge_attr_dim = 1
+        batch_size = 20
     else:
-        args.transform = False
+        train_set, test_set, val_set = split_dataset_peptides(args.transform)
+        edge_attr_dim = train_set[0].edge_attr.shape[1]
+        batch_size = 3
 
-    model_outputs_path, file_path = create_paths_for_classifier(args)
+    deg = None
+    if args.model == "PNA":
+        max_degree = -1
+        for data in train_set:
+            d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+            max_degree = max(max_degree, int(d.max()))
 
-    data_train, data_test, data_val, = split_dataset(args.transform)
+        # Compute the in-degree histogram tensor
+        deg = torch.zeros(max_degree + 1, dtype=torch.long)
+        for data in train_set:
+            d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+            deg += torch.bincount(d, minlength=deg.numel())
 
-    in_channels, out_channels, lr, n_epochs = data_train[0].num_features, 20, 0.001, 300
+    in_channels, out_channels, lr, n_epochs = train_set[0].num_features, 200, 0.001, 20
 
-    if args.model == 'vr':
-        vae_layers, alpha, threshold = args.vae_layers, args.alpha, args.threshold
-        vae = L1VGAE(VariationalEncoder(in_channels, out_channels, layers=vae_layers, molecular=True, transform=args.transform), device)
-        vae.load_state_dict(torch.load(
-            'results/model_GCN/graph_split_/layers_' + str(
-                vae_layers) + '/transform_'+str(args.transform)+'/alpha_' + str(
-                alpha) +'/model.pt'))
 
-        vae.eval()
+    vae_layers, alpha, threshold = args.vae_layers, args.alpha, args.threshold
+    vae = L1VGAE(VariationalEncoderwithModel(in_channels=in_channels, out_channels=out_channels, layers=args.layers, molecular=False, transform=args.transform, model=args.model, deg=deg, edge_dim=edge_attr_dim), device)
 
-        data_train = transform_zinc_dataset(vae, data_train, args.threshold)
-        data_test = transform_zinc_dataset(vae, data_test, args.threshold)
-        model = TGCN(data_train[0].num_features, 1, 32, args.layers, molecular=True, trans=args.transform, vae=True)
-    else:
-        model = TGCN(data_train[0].num_features, 1, 32, args.layers, molecular=True, trans=args.transform, vae=False)
+    vae.load_state_dict(torch.load(
+        'vgae/model_PNA/layers_4/transform_no'+'/alpha_' + str(
+            alpha) +'/model.pt'))
+
+    vae.eval()
+
+    data_train = transform_zinc_dataset(vae, data_train, args.threshold)
+    data_test = transform_zinc_dataset(vae, data_test, args.threshold)
+    model = TGCN(data_train[0].num_features, 1, 32, args.layers, molecular=True, trans=args.transform, vae=True)
+
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
@@ -73,9 +85,10 @@ def transform_zinc_dataset(vae, dataset, threshold):
     for graph in dataset:
         #print(graph)
         z = vae.encode(graph)
-        gen_adj = vae.decoder.forward_all(z) > threshold
+        gen_adj = vae.decoder.forward_all(z) * (vae.decoder.forward_all(z)>threshold).float()
         sparse, attr = dense_to_sparse(gen_adj)
         graph.vr_edge_index = sparse
+        graph.vr_edge_weight = attr
         dataset_copy.append(graph)
 
     return dataset_copy
