@@ -254,9 +254,9 @@ def main(args):
   optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
 
-  train_loader = DataLoader(train_dataset, batch_size=5, shuffle=True)
-  val_loader = DataLoader(val_dataset, batch_size=5, shuffle=True)
-  test_loader = DataLoader(test_dataset, batch_size=5, shuffle=False)
+  train_loader = DataLoader(train_dataset, batch_size=20, shuffle=True)
+  val_loader = DataLoader(val_dataset, batch_size=20, shuffle=True)
+  test_loader = DataLoader(test_dataset, batch_size=20, shuffle=False)
 
   val_mae_min = 1000.0
   best_model = None
@@ -279,7 +279,7 @@ def main(args):
             f'Test: {test_mae:.4f}')
 
 
-  #torch.save(best_model.state_dict(), path+'gps_best.pt')
+    torch.save(model.state_dict(), 'vae_peptides_best.pt')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
