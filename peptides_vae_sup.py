@@ -206,7 +206,7 @@ def transform_dataset_with_weights(vae, dataset, threshold):
         z = vae.encode(graph)
         gen_adj = vae.decoder.forward_all(z)
 
-        #gen_adj = ReLU()(gen_adj - threshold)
+        gen_adj = ReLU()(gen_adj - threshold)
 
         new_edge_index, new_edge_weight = dense_to_sparse(gen_adj)
 
@@ -233,7 +233,7 @@ def main(args):
   transform = T.AddRandomWalkPE(walk_length=20, attr_name='pe')
 
   vae = retrive_vae()
-  dataset_1 = transform_dataset_with_weights(vae, dataset_1, 0.2)
+  dataset_1 = transform_dataset_with_weights(vae, dataset_1, 0.4)
   dataset = []
   for graph in dataset_1:
       graph = transform(graph)
