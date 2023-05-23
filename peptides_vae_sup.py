@@ -279,7 +279,7 @@ def main(args):
             f'Test: {test_mae:.4f}')
 
 
-    torch.save(model.state_dict(), 'vae_peptides_best.pt')
+  torch.save(model.state_dict(), 'vae_peptides_best.pt')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
