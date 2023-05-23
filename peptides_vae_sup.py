@@ -1,3 +1,4 @@
+import numpy
 import torch
 import argparse
 from torch.nn import Embedding, Linear, ModuleList, ReLU, Sequential
@@ -180,12 +181,12 @@ def train(epoch, model, optimizer, train_loader, device):
         loss = criterion(out.squeeze(), data.y)
         loss.backward()
         optimizer.step()
-        total_loss.append(loss.detach()) #* data.num_graphs
+        total_loss.append(loss.detach().numpy()) #* data.num_graphs
 
-    return torch.mean(torch.stack(total_loss))
+    return numpy.mean(numpy.stack(total_loss))
 
 
-@torch.no_grad()
+
 def test(loader, model, device):
     model.eval()
     criterion = torch.nn.functional.l1_loss
@@ -196,7 +197,9 @@ def test(loader, model, device):
         total_error.append(criterion(out.squeeze(), data.y))
     return torch.mean(torch.stack(total_error))
 
+@torch.no_grad()
 def transform_dataset_with_weights(vae, dataset, threshold):
+    vae.eval()
     dataset_copy = []
     for graph in dataset:
         #print(graph)
@@ -227,10 +230,9 @@ def main(args):
 
   path = "transformers/peptides/" + args.conv + "_conv/"
   dataset_1 = PeptidesStructuralDataset()
-  transform = T.AddRandomWalkPE(walk_length=2, attr_name='pe')
+  transform = T.AddRandomWalkPE(walk_length=20, attr_name='pe')
 
   vae = retrive_vae()
-
   dataset_1 = transform_dataset_with_weights(vae, dataset_1, 0.2)
   dataset = []
   for graph in dataset_1:
