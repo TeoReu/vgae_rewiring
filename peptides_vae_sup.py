@@ -7,7 +7,7 @@ from torch_geometric.utils import dense_to_sparse
 from models.vgae import L1VGAE, VariationalEncoderwithModel
 from utils.peptides_dataset import PeptidesStructuralDataset
 from torch_geometric.loader import DataLoader
-from torch_geometric.nn import GINEConv, global_add_pool
+from torch_geometric.nn import GINEConv, global_add_pool, GCNConv
 from sklearn.metrics import average_precision_score
 import numpy as np
 import inspect
@@ -28,45 +28,6 @@ from torch_geometric.typing import Adj
 from torch_geometric.utils import to_dense_batch
 
 class GPSConv(torch.nn.Module):
-    r"""The general, powerful, scalable (GPS) graph transformer layer from the
-    `"Recipe for a General, Powerful, Scalable Graph Transformer"
-    <https://arxiv.org/abs/2205.12454>`_ paper.
-
-    The GPS layer is based on a 3-part recipe:
-
-    1. Inclusion of positional (PE) and structural encodings (SE) to the input
-       features (done in a pre-processing step via
-       :class:`torch_geometric.transforms`).
-    2. A local message passing layer (MPNN) that operates on the input graph.
-    3. A global attention layer that operates on the entire graph.
-
-    .. note::
-
-        For an example of using :class:`GPSConv`, see
-        `examples/graph_gps.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        graph_gps.py>`_.
-
-    Args:
-        channels (int): Size of each input sample.
-        conv (MessagePassing, optional): The local message passing layer.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        dropout (float, optional): Dropout probability of intermediate
-            embeddings. (default: :obj:`0.`)
-        attn_dropout (float, optional): Dropout probability of the normalized
-            attention coefficients. (default: :obj:`0`)
-        act (str or Callable, optional): The non-linear activation function to
-            use. (default: :obj:`"relu"`)
-        act_kwargs (Dict[str, Any], optional): Arguments passed to the
-            respective activation function defined by :obj:`act`.
-            (default: :obj:`None`)
-        norm (str or Callable, optional): The normalization function to
-            use. (default: :obj:`"batch_norm"`)
-        norm_kwargs (Dict[str, Any], optional): Arguments passed to the
-            respective normalization function defined by :obj:`norm`.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         channels: int,
@@ -83,7 +44,7 @@ class GPSConv(torch.nn.Module):
         self.channels = channels
         self.conv1 = conv1
         self.conv2 = conv2
-
+        self.dropout = dropout
 
         self.mlp = Sequential(
             Linear(channels, channels * 2),
@@ -130,7 +91,7 @@ class GPSConv(torch.nn.Module):
         r"""Runs the forward pass of the module."""
         hs = []
         if self.conv1 is not None:  # Local MPNN.
-            h = self.conv(x, edge_index, edge_attr=edge_attr **kwargs)
+            h = self.conv1(x, edge_index, edge_attr=edge_attr, **kwargs)
             h = F.dropout(h, p=self.dropout, training=self.training)
             h = h + x
             if self.norm1 is not None:
@@ -141,7 +102,7 @@ class GPSConv(torch.nn.Module):
             hs.append(h)
 
         if self.conv2 is not None:  # Local MPNN.
-            h = self.conv2(x, vae_edge_index, vae_edge_weight = vae_edge_weight, **kwargs)
+            h = self.conv2(x, vae_edge_index, edge_weight=vae_edge_weight, **kwargs)
             h = F.dropout(h, p=self.dropout, training=self.training)
             h = h + x
             if self.norm1 is not None:
@@ -190,7 +151,7 @@ class GPS(torch.nn.Module):
                 Linear(channels, channels),
             )
 
-            conv = GPSConv(channels, GINEConv, GINEConv, dropout= 0.2)
+            conv = GPSConv(channels, GINEConv(nn), GCNConv(in_channels = channels, out_channels =channels), dropout= 0.2)
 
             self.convs.append(conv)
 
@@ -203,7 +164,7 @@ class GPS(torch.nn.Module):
         edge_attr = self.edge_emb(data.edge_attr.float())
 
         for conv in self.convs:
-            x = conv(x, data.edge_index, data.vae_edge_index, data.edge_attr, data.vae_edge_weights, data.data.batch)
+            x = conv(x, data.edge_index, data.vae_edge_index, edge_attr, data.vae_edge_weight, data.batch)
         x = global_add_pool(x, data.batch)
         return self.lin(x)
 
@@ -265,6 +226,7 @@ def main(args):
 
   path = "transformers/peptides/" + args.conv + "_conv/"
   dataset_1 = PeptidesStructuralDataset()
+  dataset_1 = dataset_1[:int(len(dataset_1) * 0.1)]
   transform = T.AddRandomWalkPE(walk_length=2, attr_name='pe')
 
   vae = retrive_vae()
@@ -277,9 +239,9 @@ def main(args):
 
 
       # Create training, validation, and test sets
-  train_dataset = dataset[:int(len(dataset) * 0.1)]
-  val_dataset = dataset[int(len(dataset) * 0.1):int(len(dataset) * 0.2)]
-  test_dataset = dataset[int(len(dataset) * 0.3):int(len(dataset) * 0.4)]
+  train_dataset = dataset[:int(len(dataset) * 0.8)]
+  val_dataset = dataset[int(len(dataset) * 0.8):int(len(dataset) * 0.9)]
+  test_dataset = dataset[int(len(dataset) * 0.9):]
 
   print(f'Training set   = {len(train_dataset)} graphs')
   print(f'Validation set = {len(val_dataset)} graphs')
@@ -290,13 +252,13 @@ def main(args):
   optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
 
-  train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-  val_loader = DataLoader(val_dataset, batch_size=64, shuffle=True)
-  test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+  train_loader = DataLoader(train_dataset, batch_size=5, shuffle=True)
+  val_loader = DataLoader(val_dataset, batch_size=5, shuffle=True)
+  test_loader = DataLoader(test_dataset, batch_size=5, shuffle=False)
 
   val_mae_min = 1000.0
   best_model = None
-  f = open(path + "results.txt", "w")
+  #f = open(path + "results.txt", "w")
 
   for epoch in range(1, 2):
       loss = train(epoch, model, optimizer, train_loader, device)
@@ -307,14 +269,14 @@ def main(args):
           best_model = model
 
       test_mae = test(test_loader, model, device)
-      f.write(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
-            f'Test: {test_mae:.4f}\n')
+      #f.write(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
+      #      f'Test: {test_mae:.4f}\n')
 
       print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
             f'Test: {test_mae:.4f}')
 
 
-  torch.save(best_model.state_dict(), path+'gps_best.pt')
+  #torch.save(best_model.state_dict(), path+'gps_best.pt')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
