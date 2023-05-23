@@ -261,6 +261,7 @@ def main(args):
   #f = open(path + "results.txt", "w")
 
   for epoch in range(1, 301):
+      optimizer.zero_grad()
       loss = train(epoch, model, optimizer, train_loader, device)
       val_mae = test(val_loader, model, device)
 
