@@ -141,7 +141,7 @@ class GPS(torch.nn.Module):
         super().__init__()
 
         self.node_emb = Linear(9, channels)
-        self.pe_lin = Linear(2, channels)
+        self.pe_lin = Linear(20, channels)
         self.edge_emb = Linear(3, channels)
 
         self.convs = ModuleList()
