@@ -1,3 +1,5 @@
+import os
+
 import numpy
 import torch
 import argparse
@@ -27,6 +29,9 @@ from torch_geometric.nn.resolver import (
 )
 from torch_geometric.typing import Adj
 from torch_geometric.utils import to_dense_batch
+
+from utils.results import create_paths_vgae_experessivity_experiment
+
 
 class GPSConv(torch.nn.Module):
     def __init__(
@@ -169,6 +174,18 @@ class GPS(torch.nn.Module):
         x = global_add_pool(x, data.batch)
         return self.lin(x)
 
+def create_paths(args):
+    file_path =  args.file_name + "/threshold" + str(args.threshold) + "/alpha_" + str(args.alpha)
+
+    model_weights_path = file_path + "/model.pt"
+    model_outputs_path = file_path + "/results.txt"
+
+    if not os.path.exists(file_path):
+        os.makedirs(file_path)
+
+    return model_weights_path, model_outputs_path, file_path
+
+
 
 def train(epoch, model, optimizer, train_loader, device):
     model.train()
@@ -215,77 +232,79 @@ def transform_dataset_with_weights(vae, dataset, threshold):
         dataset_copy.append(graph)
     return dataset_copy
 
-def retrive_vae():
+def retrive_vae(alpha):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     vae = L1VGAE(VariationalEncoderwithModel(in_channels=9, out_channels=200, layers=4,
                                              molecular=False, transform='no', model='GCN', deg=None,
                                              edge_dim=3), device)
-    vae.load_state_dict(torch.load("vgae/peptides/model_GCN/layers_4/transform_no/alpha_5.0/model.pt",  map_location=device))
+    vae.load_state_dict(torch.load("vgae/peptides/model_GCN/layers_4/transform_no/alpha_"+ str(alpha) +"/model.pt",  map_location=device))
     return vae
 
 def main(args):
-  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model_weights_path, model_outputs_path, file_path = create_paths(args)
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-  path = "transformers/peptides/" + args.conv + "_conv/"
-  dataset_1 = PeptidesStructuralDataset()
-  transform = T.AddRandomWalkPE(walk_length=20, attr_name='pe')
+    dataset_1 = PeptidesStructuralDataset()
+    transform = T.AddRandomWalkPE(walk_length=20, attr_name='pe')
 
-  vae = retrive_vae()
-  dataset_1 = transform_dataset_with_weights(vae, dataset_1, 0.4)
-  dataset = []
-  for graph in dataset_1:
+    vae = retrive_vae(alpha=args.alpha)
+    dataset_1 = transform_dataset_with_weights(vae, dataset_1, args.threshold)
+    dataset = []
+    for graph in dataset_1:
       graph = transform(graph)
       dataset.append(graph)
 
 
       # Create training, validation, and test sets
-  train_dataset = dataset[:int(len(dataset) * 0.8)]
-  val_dataset = dataset[int(len(dataset) * 0.8):int(len(dataset) * 0.9)]
-  test_dataset = dataset[int(len(dataset) * 0.9):]
+    train_dataset = dataset[:int(len(dataset) * 0.8)]
+    val_dataset = dataset[int(len(dataset) * 0.8):int(len(dataset) * 0.9)]
+    test_dataset = dataset[int(len(dataset) * 0.9):]
 
-  print(f'Training set   = {len(train_dataset)} graphs')
-  print(f'Validation set = {len(val_dataset)} graphs')
-  print(f'Test set       = {len(test_dataset)} graphs')
+    print(f'Training set   = {len(train_dataset)} graphs')
+    print(f'Validation set = {len(val_dataset)} graphs')
+    print(f'Test set       = {len(test_dataset)} graphs')
 
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  model = GPS(channels=64, num_layers=args.layers, edge_conv=args.conv).to(device)
-  optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
-
-
-  train_loader = DataLoader(train_dataset, batch_size=20, shuffle=True)
-  val_loader = DataLoader(val_dataset, batch_size=20, shuffle=True)
-  test_loader = DataLoader(test_dataset, batch_size=20, shuffle=False)
-
-  val_mae_min = 1000.0
-  best_model = None
-  #f = open(path + "results.txt", "w")
-
-  for epoch in range(1, 301):
-      optimizer.zero_grad()
-      loss = train(epoch, model, optimizer, train_loader, device)
-      val_mae = test(val_loader, model, device)
-
-      if  val_mae < val_mae_min:
-          val_mae_min = val_mae
-          best_model = model
-
-      test_mae = test(test_loader, model, device)
-      #f.write(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
-      #      f'Test: {test_mae:.4f}\n')
-
-      print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
-            f'Test: {test_mae:.4f}')
+    model = GPS(channels=64, num_layers=args.layers, edge_conv=args.conv).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
 
-  torch.save(model.state_dict(), 'vae_peptides_best.pt')
+    train_loader = DataLoader(train_dataset, batch_size=20, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=20, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=20, shuffle=False)
+
+    val_mae_min = 1000.0
+    best_model = None
+    f = open(model_outputs_path, "w")
+
+    for epoch in range(1, 151):
+          optimizer.zero_grad()
+          loss = train(epoch, model, optimizer, train_loader, device)
+          val_mae = test(val_loader, model, device)
+
+          if  val_mae < val_mae_min:
+              val_mae_min = val_mae
+              best_model = model
+
+          test_mae = test(test_loader, model, device)
+          f.write(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
+                f'Test: {test_mae:.4f}\n')
+
+          print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
+                f'Test: {test_mae:.4f}')
+
+
+    torch.save(best_model.state_dict(), model_weights_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='peptides')
     parser.add_argument('--conv', type=str, default='GINE')
-    parser.add_argument('--layers', type=int, default = 5)
+    parser.add_argument('--layers', type=int, default=5)
+    parser.add_argument('--file_name', type=str, default='peptides_results')
+    parser.add_argument('--threshold', type=float, default=0.4)
+    parser.add_argument('--alpha', type=float, default=5.0)
 
     args = parser.parse_args()
     main(args)
