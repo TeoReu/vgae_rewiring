@@ -1,113 +1,135 @@
 import torch
-
-from models.supervized import TGCN
-from utils.peptides_dataset import PeptidesFunctionalDataset
+import argparse
+from torch.nn import Embedding, Linear, ModuleList, ReLU, Sequential
+import torch_geometric.transforms as T
+from utils.peptides_dataset import PeptidesStructuralDataset
 from torch_geometric.loader import DataLoader
+from torch_geometric.nn import GINEConv, GPSConv, global_add_pool
+from sklearn.metrics import average_precision_score
+import numpy as np
+
+class GPS(torch.nn.Module):
+    def __init__(self, channels: int, num_layers: int, edge_conv: str):
+        super().__init__()
+
+        self.node_emb = Linear(9, channels)
+        self.pe_lin = Linear(20, channels)
+        self.edge_emb = Linear(3, channels)
+
+        self.convs = ModuleList()
+        for _ in range(num_layers):
+            nn = Sequential(
+                Linear(channels, channels),
+                ReLU(),
+                Linear(channels, channels),
+            )
+            if edge_conv == "GINE":
+              conv = GPSConv(channels, GINEConv(nn), heads=4, attn_dropout=0.5)
+            else:
+              conv = GPSConv(channels, None, heads=4, attn_dropout=0.5)
+
+            self.convs.append(conv)
+
+        self.lin = Linear(channels, 11)
+
+    def forward(self, data):
+        pe = self.pe_lin(data.pe)
+        x = self.node_emb(data.x.float())
+        x = x + pe
+        edge_attr = self.edge_emb(data.edge_attr.float())
+
+        for conv in self.convs:
+            x = conv(x, data.edge_index, data.batch, edge_attr=edge_attr)
+        x = global_add_pool(x, data.batch)
+        return self.lin(x)
 
 
-def train(model, loader):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
-
-
-    criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(),
-                                 lr=0.01,
-                                 weight_decay=0.01)
-    epochs = 100
-
+def train(epoch, model, optimizer, train_loader, device):
     model.train()
-    for epoch in range(epochs + 1):
-        total_loss = 0
-        acc = 0
-        val_loss = 0
-        val_acc = 0
-
-        # Train on batches
-        for data in loader:
-            data = data.to(device)
-
-            optimizer.zero_grad()
-            _, out = model(data.x, data.edge_index, data.batch)
-            loss = criterion(out, data.y)
-            total_loss += loss / len(loader)
-            acc += accuracy(out.argmax(dim=1), data.y.argmax(dim=1)) / len(loader)
-            loss.backward()
-            optimizer.step()
-
-            # Validation
-            val_loss, val_acc = test(model, val_loader)
-
-        # Print metrics every 10 epochs
-        if (epoch % 10 == 0):
-            print(f'Epoch {epoch:>3} | Train Loss: {total_loss:.2f} '
-                  f'| Train Acc: {acc * 100:>5.2f}% '
-                  f'| Val Loss: {val_loss:.2f} '
-                  f'| Val Acc: {val_acc * 100:.2f}%')
-
-    test_loss, test_acc = test(model, test_loader)
-    print(f'Test Loss: {test_loss:.2f} | Test Acc: {test_acc * 100:.2f}%')
-
-    return model
+    criterion = torch.nn.functional.l1_loss
+    total_loss = []
+    for data in train_loader:
+        data = data.to(device)
+        optimizer.zero_grad()
+        out = model(data)
+        loss = criterion(out.squeeze(), data.y)
+        loss.backward()
+        total_loss.append(loss.detach()) #* data.num_graphs
+        optimizer.step()
+    return torch.mean(torch.stack(total_loss))
 
 
-def test(model, loader):
-    criterion = torch.nn.CrossEntropyLoss()
+@torch.no_grad()
+def test(loader, model, device):
     model.eval()
-    loss = 0
-    acc = 0
-
+    criterion = torch.nn.functional.l1_loss
+    total_error = []
     for data in loader:
-        _, out = model(data.x, data.edge_index, data.batch)
-        loss += criterion(out, data.y) / len(loader)
-        acc += accuracy(out.argmax(dim=1), data.y.argmax(dim=1)) / len(loader)
-
-    return loss, acc
-
-
-def accuracy(pred_y, y):
-    """Calculate accuracy."""
-    return ((pred_y == y).sum() / len(y)).item()
+        data = data.to(device)
+        out = model(data)
+        total_error.append(criterion(out.squeeze(), data.y))
+    return torch.mean(torch.stack(total_error))
 
 
-if __name__ == '__main__':
-    dataset = PeptidesFunctionalDataset()
-    print(dataset)
-    print(dataset.data.edge_index)
-    print(dataset.data.edge_index.shape)
-    print(dataset.data.x.shape)
-    print(dataset[100])
-    print(dataset[100].y)
-    print(dataset.get_idx_split())
+def main(args):
+  path = "transformers/peptides/" + args.conv + "_conv/"
+  dataset_1 = PeptidesStructuralDataset()
+  transform = T.AddRandomWalkPE(walk_length=20, attr_name='pe')
 
-    # Create training, validation, and test sets
-    train_dataset = dataset[:int(len(dataset) * 0.8)]
-    val_dataset = dataset[int(len(dataset) * 0.8):int(len(dataset) * 0.9)]
-    test_dataset = dataset[int(len(dataset) * 0.9):]
+  dataset = []
+  for graph in dataset_1:
+      graph = transform(graph)
+      dataset.append(graph)
 
-    print(f'Training set   = {len(train_dataset)} graphs')
-    print(f'Validation set = {len(val_dataset)} graphs')
-    print(f'Test set       = {len(test_dataset)} graphs')
 
-    # Create mini-batches
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+      # Create training, validation, and test sets
+  train_dataset = dataset[:int(len(dataset) * 0.8)]
+  val_dataset = dataset[int(len(dataset) * 0.8):int(len(dataset) * 0.9)]
+  test_dataset = dataset[int(len(dataset) * 0.9):]
 
-    '''
-    print('\nTrain loader:')
-    for i, subgraph in enumerate(train_loader):
-        print(f' - Subgraph {i}: {subgraph}')
+  print(f'Training set   = {len(train_dataset)} graphs')
+  print(f'Validation set = {len(val_dataset)} graphs')
+  print(f'Test set       = {len(test_dataset)} graphs')
 
-    print('\nValidation loader:')
-    for i, subgraph in enumerate(val_loader):
-        print(f' - Subgraph {i}: {subgraph}')
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  model = GPS(channels=64, num_layers=args.layers, edge_conv=args.conv).to(device)
+  optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
-    print('\nTest loader:')
-    for i, subgraph in enumerate(test_loader):
-        print(f' - Subgraph {i}: {subgraph}')
-    '''
-    model = TGCN(32, dataset)
 
-    train(model, train_loader)
+  train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+  val_loader = DataLoader(val_dataset, batch_size=64, shuffle=True)
+  test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+  val_mae_min = 1000.0
+  best_model = None
+  torch.save(model.state_dict(), path+'gps_first.pt')
+  f = open(path + "results.txt", "w")
+
+  for epoch in range(1, 301):
+      loss = train(epoch, model, optimizer, train_loader, device)
+      val_mae = test(val_loader, model, device)
+
+      if  val_mae < val_mae_min:
+          val_mae_min = val_mae
+          best_model = model
+
+      test_mae = test(test_loader, model, device)
+      f.write(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
+            f'Test: {test_mae:.4f}\n')
+
+      print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val: {val_mae:.4f}, '
+            f'Test: {test_mae:.4f}')
+
+
+  torch.save(best_model.state_dict(), path+'gps_best.pt')
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str, default='peptides')
+    parser.add_argument('--conv', type=str, default='GINE')
+    parser.add_argument('--layers', type=int, default = 5)
+
+    args = parser.parse_args()
+    main(args)
+
 
