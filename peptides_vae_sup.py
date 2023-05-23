@@ -179,8 +179,9 @@ def train(epoch, model, optimizer, train_loader, device):
         out = model(data)
         loss = criterion(out.squeeze(), data.y)
         loss.backward()
-        total_loss.append(loss.detach()) #* data.num_graphs
         optimizer.step()
+        total_loss.append(loss.detach()) #* data.num_graphs
+
     return torch.mean(torch.stack(total_loss))
 
 
