@@ -181,7 +181,7 @@ def train(epoch, model, optimizer, train_loader, device):
         loss = criterion(out.squeeze(), data.y)
         loss.backward()
         optimizer.step()
-        total_loss.append(loss.cpu().detach().numpy()) #* data.num_graphs
+        total_loss.append(loss.cpu().detach().numpy()) #
 
     return numpy.mean(numpy.stack(total_loss))
 
