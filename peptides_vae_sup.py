@@ -226,7 +226,6 @@ def main(args):
 
   path = "transformers/peptides/" + args.conv + "_conv/"
   dataset_1 = PeptidesStructuralDataset()
-  dataset_1 = dataset_1[:int(len(dataset_1) * 0.1)]
   transform = T.AddRandomWalkPE(walk_length=2, attr_name='pe')
 
   vae = retrive_vae()
@@ -260,7 +259,7 @@ def main(args):
   best_model = None
   #f = open(path + "results.txt", "w")
 
-  for epoch in range(1, 2):
+  for epoch in range(1, 301):
       loss = train(epoch, model, optimizer, train_loader, device)
       val_mae = test(val_loader, model, device)
 
