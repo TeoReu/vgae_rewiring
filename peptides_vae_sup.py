@@ -254,9 +254,9 @@ def main(args):
   optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
 
-  train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
-  val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
-  test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+  train_loader = DataLoader(train_dataset, batch_size=5, shuffle=True)
+  val_loader = DataLoader(val_dataset, batch_size=5, shuffle=True)
+  test_loader = DataLoader(test_dataset, batch_size=5, shuffle=False)
 
   val_mae_min = 1000.0
   best_model = None
