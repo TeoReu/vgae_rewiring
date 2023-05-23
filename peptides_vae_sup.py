@@ -186,7 +186,7 @@ def train(epoch, model, optimizer, train_loader, device):
     return numpy.mean(numpy.stack(total_loss))
 
 
-
+@torch.no_grad()
 def test(loader, model, device):
     model.eval()
     criterion = torch.nn.functional.l1_loss
