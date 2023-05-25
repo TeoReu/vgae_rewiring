@@ -167,7 +167,7 @@ class GPS(torch.nn.Module):
 
             self.convs.append(conv)
 
-        self.lin = Linear(channels, 11)
+        self.lin = Linear(channels, 1)
 
     def forward(self, data):
         pe = self.pe_lin(data.pe)
