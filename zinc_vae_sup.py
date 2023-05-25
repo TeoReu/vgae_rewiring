@@ -171,7 +171,7 @@ class GPS(torch.nn.Module):
 
     def forward(self, data):
         pe = self.pe_lin(data.pe)
-        x = self.node_emb(data.xsqueeze(-1))
+        x = self.node_emb(data.x.squeeze(-1))
         x = x + pe
         edge_attr = self.edge_emb(data.edge_attr.float())
 
