@@ -148,9 +148,9 @@ class GPS(torch.nn.Module):
     def __init__(self, channels: int, num_layers: int, args):
         super().__init__()
 
-        self.node_emb = Linear(9, channels)
+        self.node_emb = Embedding(21, channels)
         self.pe_lin = Linear(args.pe, channels)
-        self.edge_emb = Linear(3, channels)
+        self.edge_emb = Embedding(4, channels)
 
         self.convs = ModuleList()
         for _ in range(num_layers):
