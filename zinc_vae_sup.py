@@ -269,7 +269,7 @@ def main(args):
     val_dataset = ZINC(path, subset=True, split='val', pre_transform=transform)
     test_dataset = ZINC(path, subset=True, split='test', pre_transform=transform)
 
-    vae = retrive_vae(alpha=args.alpha)
+    vae = retrive_vae(args.alpha,  train_dataset)
 
     train_dataset = transform_dataset_with_weights(vae, train_dataset, args.threshold)
     val_dataset = transform_dataset_with_weights(vae, val_dataset, args.threshold)
