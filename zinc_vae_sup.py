@@ -254,7 +254,7 @@ def retrive_vae(alpha, train_set):
 
     vae = L1VGAE(VariationalEncoderwithModel(in_channels=train_set[0].num_features, out_channels=200, layers=4, molecular=False, transform="no", model="PNA", deg=deg, edge_dim=1), device)
 
-    vae.load_state_dict(torch.load("vgae/model_PNA/layers_4/transform_no/alpha_"+ str(alpha) +"/model.pt",  map_location=device))
+    vae.load_state_dict(torch.load("vgae/zinc/model_PNA/layers_4/transform_no/alpha_"+ str(alpha) +"/model.pt",  map_location=device))
     return vae
 
 def main(args):
