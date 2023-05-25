@@ -318,8 +318,8 @@ if __name__ == "__main__":
     parser.add_argument('--layers', type=int, default=5)
     parser.add_argument('--file_name', type=str, default='zinc_results')
     parser.add_argument('--threshold', type=float, default=0.4)
-    parser.add_argument('--alpha', type=float, default=5.0)
     parser.add_argument('--pe', type=int, default=2)
+    parser.add_argument('--alpha', type=float, default=5.0)
 
     args = parser.parse_args()
     main(args)
