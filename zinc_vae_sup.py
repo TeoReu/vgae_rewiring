@@ -173,7 +173,7 @@ class GPS(torch.nn.Module):
         pe = self.pe_lin(data.pe)
         x = self.node_emb(data.x.squeeze(-1))
         x = x + pe
-        edge_attr = self.edge_emb(data.edge_attr.float())
+        edge_attr = self.edge_emb(data.edge_attr)
 
         for conv in self.convs:
             x = conv(x, data.edge_index, data.vae_edge_index, edge_attr, data.vae_edge_weight, data.batch)
